@@ -1,3 +1,8 @@
+Note: You can paste this into the corresponding box. 
+Do not copy the label; only copy the text after the colon (:). 
+If there is nothing to enter in a box, you may type "None".
+
+
 Easy (1)
 Crime: Fraud
 
