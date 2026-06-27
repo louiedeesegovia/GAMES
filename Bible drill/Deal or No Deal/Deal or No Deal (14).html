@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal or No Deal — 2-Group Tactical Trivia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* -- Stage palette -- */
+            --stage-black: #07070a;
+            --stage-navy: #0e1726;
+            --board-bg: #11141c;
+            --panel-bg: #161a24;
+            --line: #262b38;
+            --line-soft: #1d212c;
+
+            --gold: #f0c75e;
+            --gold-bright: #ffe9a8;
+            --gold-deep: #9c7322;
+            --gold-gradient: linear-gradient(180deg, #fff3cf 0%, #f0c75e 45%, #c4922f 75%, #93661c 100%);
+            --gold-gradient-soft: linear-gradient(180deg, #3a2f15 0%, #2a2310 100%);
+
+            --p1-color: #2b7fff;
+            --p1-glow: rgba(43, 127, 255, 0.45);
+            --p2-color: #ff4d5e;
+            --p2-glow: rgba(255, 77, 94, 0.45);
+
+            --success: #2ecc71;
+            --danger: #ff5e5e;
+
+            --font-display: 'Anton', 'Arial Narrow', sans-serif;
+            --font-body: 'Manrope', 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+            }
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--stage-black);
+            background-image:
+                radial-gradient(ellipse 900px 600px at 50% -10%, rgba(240, 199, 94, 0.10), transparent 60%),
+                radial-gradient(ellipse 1200px 900px at 50% 110%, rgba(43, 79, 160, 0.10), transparent 60%);
+            color: #e9e9ee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        /* ============ STAGE / GAME CONTAINER ============ */
+
+        .stage-frame {
+            position: relative;
+            width: 100%;
+            max-width: 1180px;
+            padding: 14px;
+            border-radius: 22px;
+            background: linear-gradient(165deg, #1b1f2a, #0a0c12);
+            box-shadow:
+                0 30px 70px rgba(0,0,0,0.65),
+                inset 0 0 0 1px rgba(255,255,255,0.04);
+        }
+
+        /* Marquee light strip — the show's signature ring of stage bulbs */
+        .marquee-lights {
+            position: absolute;
+            inset: 0;
+            border-radius: 22px;
+            padding: 4px;
+            pointer-events: none;
+        }
+        .marquee-lights::before {
+            content: "";
+            position: absolute;
+            inset: 4px;
+            border-radius: 19px;
+            background-image: repeating-linear-gradient(
+                to right,
+                rgba(240, 199, 94, 0.95) 0 6px,
+                rgba(240, 199, 94, 0.12) 6px 18px
+            );
+            background-size: 18px 4px;
+            background-repeat: repeat-x;
+            background-position: top left, bottom left;
+            -webkit-mask:
+                linear-gradient(#000 0 0) top / 100% 4px no-repeat,
+                linear-gradient(#000 0 0) bottom / 100% 4px no-repeat;
+            mask:
+                linear-gradient(#000 0 0) top / 100% 4px no-repeat,
+                linear-gradient(#000 0 0) bottom / 100% 4px no-repeat;
+            animation: bulbFlicker 3.2s linear infinite;
+        }
+        @keyframes bulbFlicker {
+            0%, 100% { opacity: 1; }
+            48% { opacity: 1; }
+            50% { opacity: 0.55; }
+            52% { opacity: 1; }
+            76% { opacity: 1; }
+            78% { opacity: 0.65; }
+            80% { opacity: 1; }
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            background-color: var(--board-bg);
+            background-image: radial-gradient(ellipse 700px 300px at 50% 0%, rgba(240,199,94,0.06), transparent 70%);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 22px;
+            display: grid;
+            grid-template-columns: 188px 1fr 188px;
+            gap: 18px;
+            overflow: hidden;
+        }
+
+        /* ============ MONEY LADDER ============ */
+
+        .money-column {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .money-amount {
+            background: var(--panel-bg);
+            border: 1px solid var(--line-soft);
+            color: #5b6072;
+            border-radius: 5px;
+            padding: 7px 10px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            text-align: right;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .money-amount .cash-value { display: block; }
+
+        .money-amount.active {
+            background: var(--gold-gradient);
+            color: #2a1d05;
+            border-color: rgba(255,255,255,0.6);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+            box-shadow: 0 0 14px rgba(243, 205, 95, 0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+            transform: scale(1.02);
+        }
+
+        .money-amount:not(.active) {
+            opacity: 0.45;
+            text-decoration: line-through;
+            text-decoration-color: #3a3f4c;
+            transform: scale(0.97);
+        }
+
+        /* ============ MAIN BOARD ============ */
+
+        .main-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 4px 0;
+            min-width: 0;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 34px;
+            letter-spacing: 3px;
+            color: #f3f3f3;
+            text-align: center;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 14px rgba(0,0,0,0.6);
+        }
+        .logo span {
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .tagline {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #6b7180;
+            margin-bottom: 18px;
+        }
+
+        .status-panel {
+            background: linear-gradient(180deg, #181c27, #131620);
+            border: 1px solid var(--line);
+            border-left: 4px solid #555;
+            border-radius: 10px;
+            width: 100%;
+            padding: 14px 18px;
+            text-align: center;
+            margin-bottom: 16px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .status-panel.p1-turn { border-left-color: var(--p1-color); box-shadow: 0 0 22px -8px var(--p1-glow); }
+        .status-panel.p2-turn { border-left-color: var(--p2-color); box-shadow: 0 0 22px -8px var(--p2-glow); }
+
+        .status-title {
+            color: #767c8c;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 1.5px;
+        }
+
+        .status-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f1f4;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+
+        .debts-display {
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 500;
+            color: #ff8a93;
+            margin-bottom: 16px;
+            text-align: center;
+            letter-spacing: 0.3px;
+            opacity: 0.9;
+        }
+
+        /* ============ BRIEFCASE GRID ============ */
+
+        .cases-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 14px 10px;
+            width: 100%;
+            margin-bottom: 18px;
+        }
+
+        .briefcase {
+            position: relative;
+            background: linear-gradient(180deg, #3a3d45 0%, #2b2d33 55%, #232529 100%);
+            border: 1px solid #44474f;
+            color: #e7e7ea;
+            padding: 14px 4px 10px;
+            text-align: center;
+            border-radius: 7px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 15px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+
+        /* suitcase handle */
+        .briefcase::before {
+            content: "";
+            position: absolute;
+            top: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 44%;
+            height: 9px;
+            border-radius: 4px 4px 0 0;
+            background: linear-gradient(180deg, #6b6f78, #3c3e44);
+            border: 1px solid #2a2c31;
+            border-bottom: none;
+        }
+        /* clasp accents */
+        .briefcase::after {
+            content: "";
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 2px;
+            background: rgba(0,0,0,0.35);
+            border-radius: 2px;
+        }
+
+        .briefcase:hover:not(.opened):not(.player1-case):not(.player2-case) {
+            background: linear-gradient(180deg, #46494f, #34363c);
+            border-color: var(--gold);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px -6px rgba(0,0,0,0.6), 0 0 0 1px rgba(240,199,94,0.4);
+        }
+
+        .briefcase.player1-case {
+            background: linear-gradient(180deg, #3f8dff 0%, var(--p1-color) 60%, #1b5fcc 100%);
+            border-color: #6fa8ff;
+            color: #fff;
+            cursor: not-allowed;
+            font-size: 11.5px;
+            line-height: 1.5;
+            box-shadow: 0 0 18px -4px var(--p1-glow), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .briefcase.player2-case {
+            background: linear-gradient(180deg, #ff6b78 0%, var(--p2-color) 60%, #cc2a3a 100%);
+            border-color: #ff96a0;
+            color: #fff;
+            cursor: not-allowed;
+            font-size: 11.5px;
+            line-height: 1.5;
+            box-shadow: 0 0 18px -4px var(--p2-glow), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .briefcase.opened {
+            background: #1a1b1f;
+            border-color: #232428;
+            color: #4a4d54;
+            cursor: not-allowed;
+            font-size: 12px;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+        }
+        .briefcase.opened::before { background: linear-gradient(180deg, #34363a, #222327); border-color: #1a1b1f; }
+
+        /* ============ TRIVIA & BANK PANELS ============ */
+
+        .bank-section, .trivia-section {
+            background: linear-gradient(180deg, rgba(22,26,36,0.97), rgba(14,17,24,0.97));
+            border-radius: 12px;
+            width: 100%;
+            padding: 26px 24px;
+            text-align: center;
+            display: none;
+        }
+
+        .bank-section {
+            border: 1px solid rgba(240,199,94,0.5);
+            box-shadow: 0 0 40px -10px rgba(240,199,94,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        .trivia-section {
+            border: 1px solid rgba(43,127,255,0.5);
+            box-shadow: 0 0 40px -10px rgba(43,127,255,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .trivia-question {
+            font-size: 19px;
+            font-weight: 700;
+            margin: 14px 0 22px;
+            color: #fafafa;
+            line-height: 1.45;
+        }
+
+        .trivia-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .btn-option {
+            background: #1d2029;
+            color: #e9e9ee;
+            border: 1px solid #353a47;
+            padding: 13px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.18s ease;
+        }
+
+        .btn-option:hover {
+            background: #262b38;
+            border-color: var(--p1-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px -6px var(--p1-glow);
+        }
+
+        .offer-amount {
+            font-family: var(--font-mono);
+            font-size: 44px;
+            font-weight: 700;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 10px 0 6px;
+            filter: drop-shadow(0 0 18px rgba(243,205,95,0.35));
+        }
+
+        .decision-panel-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .player-box {
+            background: #12151d;
+            padding: 16px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+        }
+        .player-box.p1 { border-top: 3px solid var(--p1-color); }
+        .player-box.p2 { border-top: 3px solid var(--p2-color); }
+
+        .player-box-label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .player-box.p1 .player-box-label { color: var(--p1-color); }
+        .player-box.p2 .player-box-label { color: var(--p2-color); }
+
+        .decision-status {
+            margin-top: 10px;
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            color: #888fa0;
+        }
+
+        .btn {
+            padding: 11px 18px;
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 700;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 4px;
+            width: 112px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+        }
+        .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .btn-deal {
+            background: linear-gradient(180deg, #3ddc84, var(--success) 60%, #1f9d57);
+            color: #06210f;
+            box-shadow: 0 3px 0 #1c7d44, inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+        .btn-deal:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.07); }
+
+        .btn-nodeal {
+            background: linear-gradient(180deg, #ff7b7b, var(--danger) 60%, #cc3a3a);
+            color: #2b0606;
+            box-shadow: 0 3px 0 #a82f2f, inset 0 1px 0 rgba(255,255,255,0.35);
+        }
+        .btn-nodeal:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.07); }
+
+        .btn-restart {
+            background: var(--gold-gradient);
+            color: #2a1d05;
+            display: none;
+            margin-top: 18px;
+            width: auto;
+            padding: 13px 32px;
+            border-radius: 30px;
+            font-size: 14px;
+            box-shadow: 0 4px 18px -4px rgba(240,199,94,0.5);
+        }
+        .btn-restart:hover { transform: translateY(-2px) scale(1.03); }
+
+        /* ============ REVEAL MODAL ============ */
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(4, 5, 8, 0.86);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            position: relative;
+            background: linear-gradient(180deg, #1a1d26, #11131a);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 42px 40px 36px;
+            max-width: 580px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+            transform: scale(0.7);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-subtitle {
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: #767c8c;
+            margin-bottom: 8px;
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 26px;
+            letter-spacing: 1px;
+            margin-bottom: 22px;
+        }
+
+        .modal-value {
+            font-family: var(--font-mono);
+            font-size: 50px;
+            font-weight: 700;
+            margin: 16px 0;
+            padding: 16px;
+            border-radius: 10px;
+            background: #1d2029;
+            display: inline-block;
+            min-width: 250px;
+            box-shadow: inset 0 0 18px rgba(0,0,0,0.55);
+        }
+
+        .modal-value.clean {
+            color: #2a1d05;
+            background: var(--gold-gradient);
+            border: 1px solid rgba(255,255,255,0.6);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        .modal-value.penalty {
+            color: #fff;
+            background: linear-gradient(180deg, #ff5d5d, #c8233a);
+            border: 1px solid #ff7675;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .modal-description {
+            font-size: 15px;
+            color: #b7bccb;
+            margin-bottom: 28px;
+            line-height: 1.55;
+        }
+
+        .btn-modal-close {
+            background: #f1f1f4;
+            color: #14151a;
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 700;
+            padding: 13px 36px;
+            border-radius: 30px;
+            width: auto;
+            min-width: 160px;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .btn-modal-close:hover {
+            background: var(--gold);
+            transform: scale(1.05);
+        }
+
+        /* ============ RESPONSIVE ============ */
+
+        @media (max-width: 768px) {
+            .game-container { grid-template-columns: 1fr; padding: 16px; }
+            .money-column {
+                order: 2;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+            .money-amount { text-align: center; font-size: 11px; padding: 6px 4px; }
+            .main-board { order: 1; }
+            .trivia-options, .decision-panel-container { grid-template-columns: 1fr; }
+            .logo { font-size: 26px; }
+            .cases-grid { grid-template-columns: repeat(4, 1fr); gap: 16px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Big Pop-up Reveal Modal -->
+<div class="modal-overlay" id="reveal-modal">
+    <div class="modal-content" id="modal-content-box">
+        <div class="modal-subtitle" id="modal-sub-header">Briefcase Unlocked</div>
+        <div class="modal-title" id="modal-main-header">Case Reveal</div>
+        <div class="modal-value" id="modal-display-value">Pts 0</div>
+        <div class="modal-description" id="modal-desc-text">Result status message details...</div>
+        <button class="btn btn-modal-close" onclick="closeRevealModal()">Continue</button>
+    </div>
+</div>
+
+<div class="stage-frame">
+    <div class="marquee-lights"></div>
+    <div class="game-container">
+        <div class="money-column" id="left-money"></div>
+
+        <div class="main-board">
+            <div class="logo">DEAL <span>OR</span> NO DEAL</div>
+            <div class="tagline">2-Group Tactical Trivia</div>
+
+            <div class="status-panel" id="status-panel">
+                <div class="status-title" id="status-title">Game Start</div>
+                <div class="status-text" id="status-text">Group 1: Select your personal briefcase!</div>
+            </div>
+
+            <div class="debts-display" id="debts-ui" style="display:none;"></div>
+
+            <div class="cases-grid" id="cases-container"></div>
+
+            <div class="trivia-section" id="trivia-ui">
+                <div class="status-title" style="color: #2b7fff;" id="trivia-round-title">Security Challenge</div>
+                    <div id="timer-display"
+                        style="
+                        font-size:26px;
+                        font-weight:bold;
+                        color:#ffd700;
+                        margin-bottom:15px;">
+                        Time Left: 30
+                    </div>
+                <div class="trivia-question" id="question-text">Question content goes here?</div>
+                <div class="trivia-options" id="options-container"></div>
+            </div>
+
+
+
+            <div class="bank-section" id="bank-ui">
+                <div class="status-title">Banker's Shared Offer Evaluation</div>
+                <div class="offer-amount" id="offer-text">Pts 0</div>
+
+                <div class="decision-panel-container">
+                    <div class="player-box p1" id="p1-decision-box">
+                        <div class="player-box-label">Group 1 Decision</div>
+                        <button class="btn btn-deal" id="p1-deal-btn" onclick="registerDecision(1, 'DEAL')">Deal</button>
+                        <button class="btn btn-nodeal" id="p1-nodeal-btn" onclick="registerDecision(1, 'NO DEAL')">No Deal</button>
+                        <div class="decision-status" id="p1-status">Waiting...</div>
+                    </div>
+                    <div class="player-box p2" id="p2-decision-box">
+                        <div class="player-box-label">Group 2 Decision</div>
+                        <button class="btn btn-deal" id="p2-deal-btn" onclick="registerDecision(2, 'DEAL')">Deal</button>
+                        <button class="btn btn-nodeal" id="p2-nodeal-btn" onclick="registerDecision(2, 'NO DEAL')">No Deal</button>
+                        <div class="decision-status" id="p2-status">Waiting...</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-restart" id="restart-btn" onclick="initGame()">Play Again</button>
+        </div>
+
+        <div class="money-column" id="right-money"></div>
+    </div>
+</div>
+
+<script>
+    const cashValues = [
+        1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750, 
+        1000, 5000, 10000, 25000, 50000, 75000, 100000, 200000, 300000, 400000, 500000, 750000, 1000000, 2000000 
+    ];
+
+    const triviaBank = [
+        { q: "The people of Israel lived in Egypt for _____ years before God sent Moses to bring them to the Promised Land.", o: ["40", "70", "99", "430"], a: 3 },
+        { q: "The mark of the beast that John saw as recorded in the book of Revelation was _____ ", o: ["600", "666", "969", "144000"], a: 1 },
+        { q: "The good shepherd, Jesus said, would leave _____ sheep in the open field to search for the one sheep that was missing.", o: ["40", "70", "84", "99"], a: 3 },
+        { q: "The age of Anna, the prophetess who blessed Jesus’ parents in the temple was _____ .", o: ["40", "70", "84", "99"], a: 3 },
+        { q: "Noah was_years old when he climbed on board the ark.", o: ["600", "666", "969", "144000"], a: 0 },
+        { q: "Methuselah, the oldest man who ever lived, died at the age of _____ .", o: ["600", "666", "969", "144000"], a: 2 },
+        { q: "John saw a vision that God would save _____ of his people.", o: ["600", "666", "969", "144000"], a: 3 },
+        { q: "Jesus said that Peter must forgive his brother, not seven times, but _____ times seven.", o: ["40", "70", "99", "430"], a: 1 },
+        { q: "Israel wandered for _____ years total in the desert.", o: ["40", "70", "99", "430"], a: 0 },
+        { q: "Gideon defeated the Midianite army with only _____ men.", o: ["300", "430", "600", "666"], a: 0 },
+        { q: "Abimelech killed _____ of his half brothers.", o: ["69", "28", "27", "50"], a: 0 },
+        { q: "All the sheets used to build the tabernacle were _____ cubits wide.", o: ["69", "28", "27", "50"], a: 1 },
+        { q: "Each pillar from the temple Solomon built was _____ feet high.", o: ["69", "28", "27", "50"], a: 2 },
+        { q: "Every _____ years Israel was to celebrate the Year of Jubilee.", o: ["69", "28", "27", "50"], a: 3 },
+        { q: "It took _____ years for Herod to build the temple that stood in Jesus’ day.", o: ["6", "7", "8", "46"], a: 3 },
+        { q: "Josiah became king of Judah at age _____.", o: ["7", "8", "9", "0"], a: 1 },
+        { q: "Noah had _____ sons.", o: ["3", "2", "4", "8"], a: 0 },
+        { q: "Rehoboam had _____ sons.", o: ["8", "18", "28", "38"], a: 2 },
+        { q: "The man Jesus healed at the pool of Bethesda had been a cripple for _____ years.", o: ["18", "28", "38", "48"], a: 2 },
+        { q: "Zedekiah became king of Judah at age _____.", o: ["21", "22", "23", "25"], a: 0 },
+        { q: "Aaron was _____ years old when he traveled to Egypt with Moses.", o: ["80", "60", "83", "63"], a: 2 },
+        { q: "Abraham lived _____ years before he died", o: ["100", "125", "150", "175"], a: 3 },
+        { q: "Abram was _____ years old when Hagar gave birth to Ishmael.", o: ["86", "60", "66", "80"], a: 0 },
+        { q: "Doeg the Edomite killed _____ priests at Nob.", o: ["72", "85", "86", "90"], a: 1 },
+        { q: "Jesus sent out _____ followers to preach about the kingdom of God.", o: ["52", "55", "62", "72"], a: 3 },
+        { q: "Manasseh reigned in Judah for _____ years.", o: ["52", "55", "62", "66"], a: 1 }
+    ];
+    
+    let state = {
+        shuffledValues: [],
+        cases: {}, 
+        player1Case: null,
+        player2Case: null,
+        p1Active: true,
+        p2Active: true,
+        currentRound: 1,
+        p1CasesOpenedThisRound: 0,
+        p2CasesOpenedThisRound: 0,
+        openedCashValues: [],
+        isGameOver: false,
+        currentOffer: 0,
+        pendingCaseToOpen: null,
+        usedQuestions: [],
+        currentPlayerTurn: 1,
+        p1Debts: 0,
+        p2Debts: 0,
+        p1Choice: null,
+        p2Choice: null,
+        p1DealAmount: 0,
+        p2DealAmount: 0,
+        lastRevealedValue: 0
+};
+
+    let selectedAnswer = null;
+    let currentCorrectAnswer = null;
+    let triviaTimer = null;
+    let timeRemaining = 60;
+
+    function initGame() {
+        state.shuffledValues = [...cashValues].sort(() => Math.random() - 0.5);
+        state.cases = {};
+        state.player1Case = null;
+        state.player2Case = null;
+        state.p1Active = true;
+        state.p2Active = true;
+        state.currentRound = 1;
+        state.p1CasesOpenedThisRound = 0;
+        state.p2CasesOpenedThisRound = 0;
+        state.openedCashValues = [];
+        state.isGameOver = false;
+        state.pendingCaseToOpen = null;
+        state.p1Debts = 0;
+        state.p2Debts = 0;
+        state.currentPlayerTurn = 1;
+        state.usedQuestions = [...triviaBank].sort(() => Math.random() - 0.5);
+        state.p1DealAmount = 0;
+        state.p2DealAmount = 0;
+
+        for (let i = 1; i <= 26; i++) {
+            state.cases = {
+                1: 75000,  
+                2: 100,      
+                3: 500000,
+                4: 5,
+                5: 10,
+                6: 200,         
+                7: 50,
+                8: 75,
+                9: 750000,         
+                10: 25,        
+                11: 300,
+                12: 750,        
+                13: 25000,        
+                14: 400,        
+                15: 400000,       
+                16: 5000,       
+                17: 10000,
+                18: 500,      
+                19: 50000,
+                20: 1000000,    
+                21: 100000,
+                22: 200000,     
+                23: 300000,
+                24: 1000,     
+                25: 1,
+                26: 2000000 
+            };
+        }
+
+        renderMoneyBoards();
+        renderBriefcases();
+        updateDebtUI();
+        
+        document.getElementById('bank-ui').style.display = 'none';
+        document.getElementById('trivia-ui').style.display = 'none';
+        document.getElementById('restart-btn').style.display = 'none';
+        setTurnUI(1, "Choose Your Case", "Group 1: Select your personal briefcase to keep until the end.");
+    }
+
+    function renderMoneyBoards() {
+        const leftPanel = document.getElementById('left-money');
+        const rightPanel = document.getElementById('right-money');
+        leftPanel.innerHTML = '';
+        rightPanel.innerHTML = '';
+
+        cashValues.forEach((val, idx) => {
+            const div = document.createElement('div');
+            div.className = 'money-amount active';
+            div.id = `val-${val}`;
+            div.innerHTML = `<span class="cash-value">Pts ${val.toLocaleString()}</span>`;
+            
+            if (idx < 13) leftPanel.appendChild(div);
+            else rightPanel.appendChild(div);
+        });
+    }
+
+    function renderBriefcases() {
+        const container = document.getElementById('cases-container');
+        container.innerHTML = '';
+        container.style.display = 'grid';
+
+        for (let i = 1; i <= 26; i++) {
+            const box = document.createElement('div');
+            box.className = 'briefcase';
+            box.id = `case-${i}`;
+            box.innerText = i;
+            box.onclick = () => handleCaseClick(i);
+            container.appendChild(box);
+        }
+    }
+
+    function updateDebtUI() {
+        const debtsUI = document.getElementById('debts-ui');
+        debtsUI.style.display = "block";
+        debtsUI.innerText = `Accumulated Personal Penalties\nGroup 1: - Pts ${state.p1Debts.toLocaleString()}  |  Group 2: - Pts ${state.p2Debts.toLocaleString()}`;
+    }
+
+    function setTurnUI(player, title, text) {
+        state.currentPlayerTurn = player;
+        const panel = document.getElementById('status-panel');
+        panel.className = 'status-panel ' + (player === 1 ? 'p1-turn' : 'p2-turn');
+        document.getElementById('status-title').innerText = title;
+        document.getElementById('status-text').innerText = text;
+    }
+
+    function updateStatus(title, text) {
+        document.getElementById('status-title').innerText = title;
+        document.getElementById('status-text').innerText = text;
+    }
+
+    function handleCaseClick(caseNum) {
+        if (state.isGameOver) return;
+
+        if (state.player1Case === null) {
+            state.player1Case = caseNum;
+            const caseEl = document.getElementById(`case-${caseNum}`);
+            caseEl.className = 'briefcase player1-case';
+            caseEl.innerText = `💙 G1 (#${caseNum})`;
+            setTurnUI(2, "Choose Your Case", "Player 2: Select your personal briefcase to keep until the end.");
+            return;
+        }
+
+        if (state.player2Case === null) {
+            if (caseNum === state.player1Case) return;
+            state.player2Case = caseNum;
+            const caseEl = document.getElementById(`case-${caseNum}`);
+            caseEl.className = 'briefcase player2-case';
+            caseEl.innerText = `❤️ G2 (#${caseNum})`;
+            
+            startRound();
+            return;
+        }
+
+        const caseEl = document.getElementById(`case-${caseNum}`);
+        if (caseEl.classList.contains('opened') || caseNum === state.player1Case || caseNum === state.player2Case) return;
+
+        state.pendingCaseToOpen = caseNum;
+        triggerTriviaChallenge();
+    }
+
+    function startRound() {
+        state.p1CasesOpenedThisRound = 0;
+        state.p2CasesOpenedThisRound = 0;
+        
+        // Alternate initial turn of the round depending on who is still active[cite: 4]
+        state.currentPlayerTurn = state.p1Active ? 1 : 2;
+        determineNextTurn();
+    }
+
+    function determineNextTurn() {
+        if (!state.p1Active && !state.p2Active) {
+            endGameRevealScenario();
+            return;
+        }
+
+        const p1Done = !state.p1Active || state.p1CasesOpenedThisRound >= 2;
+        const p2Done = !state.p2Active || state.p2CasesOpenedThisRound >= 2;
+
+        if (p1Done && p2Done) {
+            triggerBankerOffer();
+            return;
+        }
+
+        // Adjust whose turn it is if one of the players has completed their quota[cite: 4]
+        if (state.currentPlayerTurn === 1 && p1Done) {
+            state.currentPlayerTurn = 2;
+        } else if (state.currentPlayerTurn === 2 && p2Done) {
+            state.currentPlayerTurn = 1;
+        }
+
+        if (state.currentPlayerTurn === 1) {
+            setTurnUI(1, `Round ${state.currentRound}`, `Group 1: Eliminate briefcase choice ${state.p1CasesOpenedThisRound + 1}/2.`);
+        } else {
+            setTurnUI(2, `Round ${state.currentRound}`, `Group 2: Eliminate briefcase choice ${state.p2CasesOpenedThisRound + 1}/2.`);
+        }
+    }
+
+    function triggerTriviaChallenge() {
+    document.getElementById('cases-container').style.display = 'none';
+    const triviaUI = document.getElementById('trivia-ui');
+    triviaUI.style.display = 'block';
+
+    const currentQuestion = state.usedQuestions[state.openedCashValues.length % state.usedQuestions.length];
+
+    document.getElementById('trivia-round-title').innerText =
+        `Group ${state.currentPlayerTurn} Turn (Opening Case #${state.pendingCaseToOpen})`;
+
+    document.getElementById('question-text').innerText =
+        currentQuestion.q;
+
+    const optionsContainer = document.getElementById('options-container');
+    optionsContainer.innerHTML = '';
+
+    currentQuestion.o.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-option';
+        btn.innerText = option;
+        btn.onclick = () => chooseAnswer(index);
+        optionsContainer.appendChild(btn);
+    });
+    clearInterval(triviaTimer);
+    // ============================
+    // Reset and start the timer
+    // ============================
+
+    selectedAnswer = null;
+    currentCorrectAnswer = currentQuestion.a;
+
+    startTriviaTimer();
+    }
+
+    function evaluateAnswer(selectedIndex, correctIndex) {
+        const caseNum = state.pendingCaseToOpen;
+        const actualValue = state.cases[caseNum];
+        state.lastRevealedValue = actualValue; // Cache value for transition close
+
+        const subHeaderEl = document.getElementById('modal-sub-header');
+        const mainHeaderEl = document.getElementById('modal-main-header');
+        const displayValueEl = document.getElementById('modal-display-value');
+        const descTextEl = document.getElementById('modal-desc-text');
+        const contentBoxEl = document.getElementById('modal-content-box');
+
+        subHeaderEl.innerText = `Group ${state.currentPlayerTurn} • Briefcase #${caseNum}`;
+        displayValueEl.innerText = `Pts ${actualValue.toLocaleString()}`;
+
+        if(selectedIndex === null){
+            selectedIndex = -1;
+        }
+        if (selectedIndex === correctIndex) {
+            // Clean Elimination Setup
+            mainHeaderEl.innerText = "Clean Elimination!";
+            mainHeaderEl.style.color = "var(--gold)";
+            contentBoxEl.style.borderColor = "var(--gold)";
+            displayValueEl.className = "modal-value clean";
+            descTextEl.innerText = `Correct answer! The money has been cleared safely from the board with zero penalty additions.`;
+        } else {
+            // Mistake Penalty Setup
+            if (state.currentPlayerTurn === 1) {
+                state.p1Debts += actualValue;
+            } else {
+                state.p2Debts += actualValue;
+            }
+            mainHeaderEl.innerText = "Security Breach Penalty!";
+            mainHeaderEl.style.color = "#ff7675";
+            contentBoxEl.style.borderColor = "#ff7675";
+            displayValueEl.className = "modal-value penalty";
+            descTextEl.innerText = `Incorrect answer! The amount inside this briefcase has been added as a personal deduction debt to your profile tracker.`;
+        }
+
+        // Hide trivia view, display pop-up modal overlay
+        document.getElementById('trivia-ui').style.display = 'none';
+        document.getElementById('reveal-modal').classList.add('show');
+    }
+
+    function closeRevealModal() {
+        document.getElementById('reveal-modal').classList.remove('show');
+        document.getElementById('cases-container').style.display = 'grid';
+        
+        updateDebtUI();
+        revealPendingCase(state.lastRevealedValue);
+    }
+
+    function revealPendingCase(dynamicValue) {
+        const caseNum = state.pendingCaseToOpen;
+        const caseEl = document.getElementById(`case-${caseNum}`);
+        
+        state.openedCashValues.push(dynamicValue);
+        
+        caseEl.className = 'briefcase opened';
+        caseEl.innerText = `Pts ${dynamicValue.toLocaleString()}`;
+        
+        // Value fades smoothly from the side tracking board now!
+        document.getElementById(`val-${dynamicValue}`).classList.remove('active');
+
+        state.pendingCaseToOpen = null;
+
+        if (state.currentPlayerTurn === 1) {
+            state.p1CasesOpenedThisRound++;
+            // Hand over the turn to Player 2 if they are active and still have slots left[cite: 4]
+            if (state.p2Active && state.p2CasesOpenedThisRound < 2) {
+                state.currentPlayerTurn = 2;
+            }
+        } else {
+            state.p2CasesOpenedThisRound++;
+            // Hand over the turn to Player 1 if they are active and still have slots left[cite: 4]
+            if (state.p1Active && state.p1CasesOpenedThisRound < 2) {
+                state.currentPlayerTurn = 1;
+            }
+        }
+
+        determineNextTurn();
+    }
+
+    function triggerBankerOffer() {
+        if (!state.p1Active && !state.p2Active) {
+            endGameRevealScenario();
+            return;
+        }
+
+        document.getElementById('cases-container').style.display = 'none';
+        
+        const remainingValues = cashValues.filter(v => !state.openedCashValues.includes(v));
+        const sum = remainingValues.reduce((a, b) => a + b, 0);
+        const average = sum / remainingValues.length;
+        
+        const dynamicFactor = Math.min(state.currentRound / 7, 0.9); 
+        state.currentOffer = Math.floor(average * dynamicFactor);
+        if (state.currentOffer < 1) state.currentOffer = 1;
+
+        updateStatus("The Banker Is On The Line", "Decide independently. Your choice is hidden until both lock in!");
+        document.getElementById('offer-text').innerText = `Pts ${state.currentOffer.toLocaleString()}`;
+
+        state.p1Choice = state.p1Active ? null : "OUT";
+        state.p2Choice = state.p2Active ? null : "OUT";
+
+        document.getElementById('p1-status').innerText = state.p1Active ? "Waiting..." : `Dealt earlier for Pts ${state.p1DealAmount.toLocaleString()}`;
+        document.getElementById('p2-status').innerText = state.p2Active ? "Waiting..." : `Dealt earlier for Pts ${state.p2DealAmount.toLocaleString()}`;
+
+        document.getElementById('p1-deal-btn').disabled = !state.p1Active;
+        document.getElementById('p1-nodeal-btn').disabled = !state.p1Active;
+        document.getElementById('p2-deal-btn').disabled = !state.p2Active;
+        document.getElementById('p2-nodeal-btn').disabled = !state.p2Active;
+
+        document.getElementById('bank-ui').style.display = 'block';
+    }
+
+    function registerDecision(playerNum, choice) {
+        if (playerNum === 1) {
+            state.p1Choice = choice;
+            document.getElementById('p1-status').innerText = "Locked In!";
+        } else {
+            state.p2Choice = choice;
+            document.getElementById('p2-status').innerText = "Locked In!";
+        }
+
+        if (state.p1Choice !== null && state.p2Choice !== null) {
+            setTimeout(evaluateSplitDecisions, 600);
+        }
+    }
+
+    function evaluateSplitDecisions() {
+        document.getElementById('bank-ui').style.display = 'none';
+        
+        const p1ChoseDeal = (state.p1Choice === 'DEAL');
+        const p2ChoseDeal = (state.p2Choice === 'DEAL');
+
+        let p1DealFinal = Math.max(state.currentOffer - state.p1Debts, 0);
+        let p2DealFinal = Math.max(state.currentOffer - state.p2Debts, 0);
+
+        if (p1ChoseDeal && p2ChoseDeal) {
+            state.isGameOver = true;
+            state.p1Active = false;
+            state.p2Active = false;
+            state.p1DealAmount = p1DealFinal;
+            state.p2DealAmount = p2DealFinal;
+            
+            let winnerAnnouncement = "";
+            if (p1DealFinal > p2DealFinal) {
+                winnerAnnouncement = "🏆 GROUP 1 WINS THE GAME!";
+            } else if (p2DealFinal > p1DealFinal) {
+                winnerAnnouncement = "🏆 GROUP 2 WINS THE GAME!";
+            } else {
+                winnerAnnouncement = "🤝 IT'S A TIE!";
+            }
+
+            updateStatus("Double Deal Accepted!", `Both groups took the deal!\nP1 walked away with Pts ${p1DealFinal.toLocaleString()} ($${state.currentOffer.toLocaleString()} deal - Pts ${state.p1Debts.toLocaleString()} penalty).\nP2 walked away with Pts ${p2DealFinal.toLocaleString()} ($${state.currentOffer.toLocaleString()} deal - Pts ${state.p2Debts.toLocaleString()} penalty).\n\n${winnerAnnouncement}`);
+            revealAllCases();
+            return;
+        }
+
+        if (p1ChoseDeal && !p2ChoseDeal) {
+            state.p1Active = false;
+            state.p1DealAmount = p1DealFinal;
+            alert(`Group 1 SECURES a Deal! Receives Pts ${p1DealFinal.toLocaleString()} (${state.currentOffer.toLocaleString()} deal - Pts ${state.p1Debts.toLocaleString()} penalty)! Group 2 rejected the deal and plays on.`);
+        }
+
+        if (!p1ChoseDeal && p2ChoseDeal) {
+            state.p2Active = false;
+            state.p2DealAmount = p2DealFinal;
+            alert(`Group 2 SECURES a Deal! Receives Pts ${p2DealFinal.toLocaleString()} ($${state.currentOffer.toLocaleString()} deal - Pts ${state.p2Debts.toLocaleString()} penalty)! Group 1 rejected the deal and plays on.`);
+        }
+
+        if (!p1ChoseDeal && !p2ChoseDeal) {
+            alert("Both groups voted NO DEAL! The game moves onward to the next round.");
+        }
+
+        document.getElementById('cases-container').style.display = 'grid';
+        state.currentRound++;
+
+        if (state.openedCashValues.length >= 24) {
+            endGameRevealScenario();
+        } else {
+            startRound();
+        }
+    }
+
+    function endGameRevealScenario() {
+        state.isGameOver = true;
+        document.getElementById('bank-ui').style.display = 'none';
+        document.getElementById('cases-container').style.display = 'grid';
+
+        let p1Raw = state.cases[state.player1Case];
+        let p2Raw = state.cases[state.player2Case];
+
+        let p1Final = state.p1Active ? Math.max(p1Raw - state.p1Debts, 0) : state.p1DealAmount;
+        let p2Final = state.p2Active ? Math.max(p2Raw - state.p2Debts, 0) : state.p2DealAmount;
+
+        let statusString = "Game Over! Final Results:\n";
+
+        if (state.p1Active) {
+            statusString += `Group 1 stayed till the end. Briefcase held: Pts ${p1Raw.toLocaleString()} minus Pts ${state.p1Debts.toLocaleString()} penalties = Pts ${p1Final.toLocaleString()} Won! | `;
+        } else {
+            statusString += `Group 1 took a Banker deal earlier for a net total of Pts ${state.p1DealAmount.toLocaleString()}! | `;
+        }
+
+        if (state.p2Active) {
+            statusString += `Group 2 stayed till the end. Briefcase held: Pts ${p2Raw.toLocaleString()} minus Pts ${state.p2Debts.toLocaleString()} penalties = Pts ${p2Final.toLocaleString()} Won!`;
+        } else {
+            statusString += `Group 2 took a Banker deal earlier for a net total of Pts ${state.p2DealAmount.toLocaleString()}!`;
+        }
+
+        let winnerAnnouncement = "";
+        if (p1Final > p2Final) {
+            winnerAnnouncement = "\n\n🏆 OVERALL WINNER: GROUP 1!";
+        } else if (p2Final > p1Final) {
+            winnerAnnouncement = "\n\n🏆 OVERALL WINNER: GROUP 2!";
+        } else {
+            winnerAnnouncement = "\n\n🤝 OVERALL RESULT: IT'S A TIE!";
+        }
+        
+        statusString += winnerAnnouncement;
+
+        updateStatus("Final Board Reveal", statusString);
+        revealAllCases();
+    }
+
+    function revealAllCases() {
+        for (let i = 1; i <= 26; i++) {
+            const caseEl = document.getElementById(`case-${i}`);
+            if (!caseEl.classList.contains('opened')) {
+                caseEl.innerText = `Pts ${state.cases[i].toLocaleString()}`;
+                if (i === state.player1Case) {
+                    caseEl.style.background = "var(--p1-color)";
+                } else if (i === state.player2Case) {
+                    caseEl.style.background = "var(--p2-color)";
+                } else {
+                    caseEl.className = 'briefcase opened';
+                }
+            }
+        }
+        document.getElementById('restart-btn').style.display = 'block';
+    }
+
+    function chooseAnswer(index) {
+
+    selectedAnswer = index;
+
+    document.querySelectorAll(".btn-option").forEach((btn,i)=>{
+
+        if(i==index){
+
+            btn.style.background="#2b7fff";
+            btn.style.color="white";
+
+        }else{
+
+            btn.style.background="";
+            btn.style.color="";
+        }
+
+    });
+
+    }
+
+    function startTriviaTimer(){
+
+    clearInterval(triviaTimer);
+
+    timeRemaining = 30;
+
+    document.getElementById("timer-display").innerText =
+        "Time Left: " + timeRemaining;
+
+    triviaTimer = setInterval(()=>{
+
+        timeRemaining--;
+
+        document.getElementById("timer-display").innerText =
+            "Time Left: " + timeRemaining;
+
+        if(timeRemaining<=0){
+
+            clearInterval(triviaTimer);
+
+            lockAnswer();
+
+        }
+
+    },1000);
+
+    }
+
+    function lockAnswer(){
+
+    document.querySelectorAll(".btn-option").forEach(btn=>{
+
+        btn.disabled=true;
+
+    });
+
+    evaluateAnswer(selectedAnswer,currentCorrectAnswer);
+
+    }
+
+    initGame();
+</script>
+
+</body>
+</html>
