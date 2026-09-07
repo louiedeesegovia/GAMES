@@ -1,0 +1,416 @@
+/* ============================================================
+   style.css — all visual styling for the Music app, its
+   Round 1 / Round 2 playlist cards, the live scoreboard, and
+   the 1-Minute Song Rush team quiz game.
+   Every rule below has a short comment explaining what it does.
+   ============================================================ */
+
+/* Design tokens (colors, gradient, border, radius) reused everywhere below */
+:root{
+  --bg: #0b0b0d;            /* app background (near-black) */
+  --panel: #141416;         /* sidebar / now-playing bar / modal background */
+  --card: #1c1c1f;          /* generic card/input background */
+  --card-hover: #232326;    /* hover state background */
+  --text: #f5f5f7;          /* primary text color (near-white) */
+  --text-dim: #9a9aa2;      /* secondary/muted text */
+  --text-faint: #5c5c62;    /* faintest text, e.g. placeholders */
+  --accent-a: #fb2d51;      /* brand accent, red-pink */
+  --accent-b: #fd6f3e;      /* brand accent, orange */
+  --grad: linear-gradient(135deg, var(--accent-a), var(--accent-b)); /* signature accent gradient */
+  --border: #232326;        /* hairline border color used throughout */
+  --radius: 10px;           /* shared corner radius (unused directly, kept for reference) */
+}
+
+/* Use border-box sizing everywhere so padding/border never blow out widths */
+*{ box-sizing: border-box; }
+
+/* Make html/body fill the full viewport height */
+html,body{ height:100%; }
+
+/* Base page styling: dark background, base font stack, no page scroll (app scrolls internally) */
+body{
+  margin:0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  overflow:hidden;
+}
+
+/* Selection highlight color when the user selects text */
+::selection{ background: var(--accent-a); color:#fff; }
+/* Custom slim scrollbar (WebKit browsers) */
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-thumb{ background:#2c2c30; border-radius:8px; }
+::-webkit-scrollbar-track{ background:transparent; }
+
+/* Overall app shell: sidebar + main content on top, now-playing bar fixed at bottom */
+.app{
+  display:grid;
+  grid-template-columns: 250px 1fr;   /* sidebar width, then main content fills the rest */
+  grid-template-rows: 1fr 88px;       /* content row, then fixed-height now-playing bar */
+  height:100vh;
+}
+
+/* ---------- Sidebar ---------- */
+/* Left navigation column: logo, nav links, playlist list */
+.sidebar{
+  grid-row: 1 / 2;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 20px 14px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap: 22px;
+}
+/* App logo/title row at top of sidebar */
+.brand{
+  display:flex; align-items:center; gap:10px;
+  padding: 0 8px 6px;
+  font-weight:700; font-size:16px; letter-spacing:.2px;
+}
+/* Small gradient square used as the logo mark */
+.brand .dot{
+  width:20px; height:20px; border-radius:6px;
+  background: var(--grad);
+  flex-shrink:0;
+  position:relative;
+  overflow:hidden;
+}
+/* Vertical list of nav buttons (Listen Now / Library) */
+.nav{ display:flex; flex-direction:column; gap:2px; }
+/* Small uppercase section label above a nav group (e.g. "Home", "Playlists") */
+.nav-label{
+  font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+  color: var(--text-faint); padding: 6px 10px 4px;
+}
+/* Individual nav button styling (icon + label row) */
+.nav button{
+  all:unset;
+  display:flex; align-items:center; gap:10px;
+  padding: 8px 10px; border-radius:8px;
+  color: var(--text-dim);
+  font-size:13.5px; font-weight:500;
+  cursor:pointer;
+}
+.nav button svg{ width:16px; height:16px; flex-shrink:0; }
+.nav button:hover{ background: #1e1e21; color: var(--text); }
+/* Highlight the currently-selected nav button */
+.nav button.active{ background: #232326; color: var(--text); }
+.nav button.active svg{ color: var(--accent-a); }
+
+/* Playlist name rows listed under the sidebar's "Playlists" section */
+.playlist-item{ color: var(--text-dim); font-size:13px; padding:6px 10px; border-radius:8px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.playlist-item:hover{ background:#1e1e21; color:var(--text); }
+
+/* ---------- Main ---------- */
+/* Scrollable main content area (everything right of the sidebar, above the now-playing bar) */
+.main{
+  grid-row: 1/2;
+  overflow-y:auto;
+  padding: 26px 34px 40px;
+  position:relative;
+}
+/* Top row of the main area: page title (search box removed along with
+   the "Your Library" section it used to filter) */
+.topbar{
+  display:flex; align-items:center; justify-space-between:space-between;
+  gap:20px; margin-bottom:20px;
+}
+.topbar h1{ font-size:24px; margin:0; letter-spacing:.2px; }
+
+/* ---------- Scoreboard ---------- */
+/* Group 1 / Group 2 running point totals, shown above the round cards.
+   Updated live by script.js whenever a correct guess is made. */
+.scoreboard{
+  display:flex; align-items:center; justify-content:center; gap:28px;
+  background: var(--panel); border:1px solid var(--border); border-radius:12px;
+  padding:16px 24px; margin-bottom:28px;
+}
+.score-card{ text-align:center; min-width:96px; }
+.score-label{
+  font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+  color: var(--text-faint); margin-bottom:4px;
+}
+/* Big gradient-filled point total, reusing the same style as the game timer */
+.score-value{
+  font-size:32px; font-weight:800; font-variant-numeric: tabular-nums;
+  background: var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.score-divider{ font-size:12px; font-weight:700; color: var(--text-faint); }
+
+
+/* Generic spacing for a titled content section (New Releases, Made For You, etc.) */
+section.block{ margin-bottom: 34px; }
+/* Section heading row: title on the left, "See All" link on the right */
+.block-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
+.block-head h2{ font-size:17px; margin:0; }
+.block-head span{ font-size:12px; color:var(--text-faint); }
+
+/* Horizontally-scrolling row of album/playlist cards */
+.hrow{
+  display:flex; gap:16px; overflow-x:auto; padding-bottom:6px; scroll-snap-type:x proximity;
+}
+/* A single album/playlist card in a horizontal row */
+.card{
+  scroll-snap-align:start;
+  flex: 0 0 168px; cursor:pointer; user-select:none;
+}
+/* Square "album art" area (rendered as a CSS gradient, no real images) */
+.art{
+  width:168px; height:168px; border-radius:8px; position:relative;
+  box-shadow: 0 8px 20px rgba(0,0,0,.35);
+  display:flex; align-items:flex-end; justify-content:flex-end;
+  transition: transform .18s ease;
+  overflow:hidden;
+}
+/* Subtle lift/scale effect on the art when its card is hovered */
+.card:hover .art{ transform: translateY(-3px) scale(1.015); }
+/* Small two-letter monogram shown in the corner of each art tile */
+.art .glyph{
+  font-size:11px; font-weight:700; color:rgba(255,255,255,.55);
+  padding:8px; letter-spacing:.06em;
+}
+/* Dark overlay + play icon shown over the art on hover.
+   NOTE: this only appears on mouse hover, so it should never be the sole
+   way to trigger something important (that's why the game now opens from
+   a direct click instead of a hover-only icon). */
+.art .playbtn{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background: rgba(0,0,0,.28); opacity:0; transition:opacity .15s ease;
+}
+.card:hover .playbtn{ opacity:1; }
+.playbtn svg{ width:34px; height:34px; color:#fff; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+/* Card title/subtitle text under the art */
+.card .title{ margin-top:8px; font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card .sub{ font-size:12px; color:var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ---------- Now playing bar ---------- */
+/* Fixed bar across the bottom of the app: track info | transport controls | volume */
+.nowplaying{
+  grid-column: 1 / 3; grid-row: 2/3;  /* spans both sidebar + main columns */
+  background: var(--panel); border-top:1px solid var(--border);
+  display:grid; grid-template-columns: 250px 1fr 250px;
+  align-items:center; padding: 0 16px; gap:16px;
+  position:relative;
+}
+/* Left section: mini art + title/artist + like icon */
+.np-track{ display:flex; align-items:center; gap:10px; min-width:0; }
+.np-art{ width:52px; height:52px; border-radius:6px; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,.4); }
+.np-meta{ min-width:0; }
+.np-meta .t{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.np-meta .a{ font-size:12px; color:var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.np-heart{ width:15px; height:15px; color:var(--text-faint); cursor:pointer; margin-left:4px; flex-shrink:0; }
+.np-heart.liked{ color:var(--accent-a); }
+
+/* Center section: prev/play/next buttons + scrub bar */
+.np-center{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.controls{ display:flex; align-items:center; gap:20px; }
+.controls button{ all:unset; cursor:pointer; color:var(--text-dim); display:flex; }
+.controls button:hover{ color:var(--text); }
+.controls svg{ width:16px; height:16px; }
+/* The round white play/pause button (visually distinct from prev/next) */
+.play-toggle{ width:30px; height:30px; border-radius:50%; background:var(--text); color:var(--bg) !important; display:flex; align-items:center; justify-content:center; }
+.play-toggle svg{ width:14px; height:14px; color:var(--bg); }
+.play-toggle:hover{ transform: scale(1.06); }
+
+/* Scrub bar row: elapsed time | progress bar | total time */
+.scrub{ display:flex; align-items:center; gap:8px; width:100%; max-width:520px; }
+.scrub span{ font-size:10.5px; color:var(--text-faint); width:32px; text-align:center; }
+/* Generic thin progress-bar track, reused for both playback scrub and volume */
+.bar{ flex:1; height:4px; background:#2a2a2e; border-radius:2px; position:relative; cursor:pointer; }
+.bar .fill{ position:absolute; left:0; top:0; height:100%; border-radius:2px; background: var(--grad); width:0%; }
+.bar .knob{ position:absolute; top:50%; width:10px; height:10px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); left:0%; opacity:0; transition:opacity .1s; }
+.bar:hover .knob{ opacity:1; }
+
+/* Right section: extra icons + volume slider */
+.np-right{ display:flex; align-items:center; justify-content:flex-end; gap:14px; }
+.np-right svg{ width:15px; height:15px; color:var(--text-dim); cursor:pointer; }
+.np-right svg:hover{ color:var(--text); }
+.vol{ display:flex; align-items:center; gap:6px; width:100px; }
+.vol .bar{ height:3px; }
+
+/* ---------- Small-screen adjustments ---------- */
+/* Below 760px: hide the sidebar, collapse the now-playing bar to a single column,
+   and drop the scrub bar / volume slider to save space. */
+@media (max-width: 760px){
+  .app{ grid-template-columns: 1fr; }
+  .sidebar{ display:none; }
+  .nowplaying{ grid-template-columns: auto 1fr auto; grid-column:1/2; }
+  .np-center .scrub{ display:none; }
+  .np-right .vol{ display:none; }
+}
+
+/* ============================================================
+   1-Minute Song Rush — game modal styling
+   ============================================================ */
+
+/* Fullscreen dark backdrop behind the game modal; hidden until .open is added */
+.game-overlay{
+  position:fixed; inset:0; z-index:200;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(6px);
+  display:none; align-items:center; justify-content:center;
+  padding:20px;
+}
+.game-overlay.open{ display:flex; }
+/* The centered modal card itself */
+.game-card{
+  width:100%; max-width:420px;
+  background: var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:26px 24px 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  position:relative;
+}
+/* Small circular "X" close button in the top-right of the modal */
+.game-close{
+  position:absolute; top:14px; right:14px;
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:#232326; color:var(--text-dim); cursor:pointer;
+}
+.game-close:hover{ color:var(--text); }
+.game-close svg{ width:13px; height:13px; }
+/* Title/subtitle shown on the game's intro screen */
+.game-head{ text-align:center; margin-bottom:18px; }
+.game-head .g-title{ font-size:16px; font-weight:700; margin-bottom:2px; }
+.game-head .g-sub{ font-size:12px; color:var(--text-faint); }
+/* Shows which playlist is loaded + its points-per-song, on the intro screen */
+.game-head .g-round-info{ font-size:12px; font-weight:700; color: var(--accent-a); margin-top:8px; }
+/* Stack of buttons on the intro screen (now two: "Start — Group 1/2") */
+.g-choices{ display:flex; flex-direction:column; gap:10px; }
+/* Row holding the countdown timer (left) and progress/correct-count (right) */
+.game-stats{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; gap:12px;
+}
+/* Big gradient-filled countdown number */
+.g-timer{
+  font-size:26px; font-weight:800; font-variant-numeric: tabular-nums;
+  background: var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+/* Pulsing animation applied to the timer once time is running low */
+.g-timer.warn{ animation: pulse .6s ease-in-out infinite; }
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.4;} }
+.g-progress{ font-size:12px; color:var(--text-dim); text-align:right; }
+/* Colored box that shows the current round's lyric hint */
+.g-artbox{
+  width:100%; height:130px; border-radius:10px; margin-bottom:16px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+}
+.g-artbox .g-hint{ text-align:center; padding:0 14px; }
+/* Direct-child-only selector so these rules don't also apply to the
+   .karaoke-word spans nested inside #gHintMain (see below) */
+.g-artbox .g-hint > #gHintMain{ display:block; color:rgba(255,255,255,.92); font-size:14px; font-weight:600; line-height:1.5; }
+.g-artbox .g-hint > #gHintSub{ display:block; font-size:11px; font-weight:500; color:rgba(255,255,255,.6); margin-top:6px; }
+/* Karaoke-style lyric reveal: each word starts dim/low-opacity (so the
+   overall line length is visible from the start without giving away
+   content), then "lights up" bright one at a time on a JS timer — see
+   playKaraokeLyrics() in script.js. */
+.karaoke-word{
+  display:inline-block;
+  opacity:.35;
+  color:rgba(255,255,255,.5);
+  transition: opacity .25s ease, color .25s ease, transform .25s ease;
+}
+.karaoke-word.lit{
+  opacity:1;
+  color:#fff;
+  transform: translateY(-1px);
+}
+
+/* Wrapper for the guess input + its dropdown + the action buttons + status line */
+.g-search-box{
+  display:flex; flex-direction:column; gap:10px; margin-top:12px;
+  position:relative; /* anchors the suggestion dropdown below the input */
+}
+/* The text input where the player types their guess */
+.g-search-input{
+  width:100%; padding:11px 14px; border-radius:9px;
+  background:#1c1c1f; border:1px solid var(--border);
+  color:var(--text); font-size:13.5px; font-weight:500;
+  outline:none;
+}
+.g-search-input:focus{ border-color:var(--accent-a); }
+/* Autocomplete dropdown for the in-game guess input (same visual style as the main search) */
+.g-search-dropdown{
+  position:absolute;
+  top:44px;
+  left:0;
+  width:100%;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 12px 28px rgba(0,0,0,.45);
+  overflow:hidden;
+  z-index:60;
+  max-height:220px;
+  overflow-y:auto;
+  display:none;
+}
+.g-search-dropdown.open{ display:block; }
+.g-search-suggestion{
+  padding:11px 16px;
+  font-size:13.5px;
+  color:#1c1c1f;
+  cursor:pointer;
+  border-bottom:1px solid #ececec;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.g-search-suggestion:last-child{ border-bottom:none; }
+.g-search-suggestion:hover,
+.g-search-suggestion.active{ background:#f2f2f4; }
+.g-search-suggestion mark{
+  background:none;
+  color:var(--accent-a);
+  font-weight:600;
+}
+.g-search-dropdown::-webkit-scrollbar{ width:8px; }
+.g-search-dropdown::-webkit-scrollbar-thumb{ background:#d8d8db; border-radius:8px; }
+.g-search-dropdown::-webkit-scrollbar-track{ background:transparent; }
+
+/* Feedback line under the buttons ("Correct!", "Not found", "Skipped", etc.) */
+.g-status-msg{
+  font-size:13px; font-weight:600; text-align:center; min-height:20px;
+}
+.g-status-msg.correct{ color:#38ef7d; }
+.g-status-msg.wrong{ color:var(--accent-a); }
+.g-status-msg.skip{ color:var(--text-dim); }
+
+/* Row holding the Pause / Pass / Submit buttons side by side */
+.g-btn-row{ display:flex; gap:8px; }
+.g-btn-row .g-again{ width:auto; flex:1; } /* override the full-width .g-again default for this row */
+/* Secondary/neutral button style used for Pause and Pass (less prominent than Submit) */
+.g-pass{ background:#232326 !important; color:var(--text-dim) !important; border:1px solid var(--border); }
+.g-pass:hover{ background:#2a2a2e !important; color:var(--text) !important; }
+/* Greyed-out look once a secondary button is disabled (e.g. no pauses left) */
+.g-pass:disabled{ opacity:.5; cursor:not-allowed; }
+.g-pass:disabled:hover{ background:#232326 !important; color:var(--text-dim) !important; }
+
+/* Right-aligned stack holding "Song X of 12" + "✓ Y correct" */
+.g-stats-right{ display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+.g-correct{ font-size:11px; font-weight:700; color:#38ef7d; }
+
+/* "+15s" bonus toast that floats up and fades out after a correct guess */
+.g-bonus{
+  position:absolute; top:64px; right:24px; font-size:12px; font-weight:700; color:#38ef7d;
+  opacity:0; pointer-events:none;
+}
+.g-bonus.show{ animation: floatUp .8s ease forwards; }
+@keyframes floatUp{ 0%{ opacity:1; transform:translateY(0);} 100%{ opacity:0; transform:translateY(-18px);} }
+
+/* End-of-game screen: result headline + score summary + "Play Again" button */
+.game-end{ text-align:center; }
+.game-end .g-result{ font-size:19px; font-weight:800; margin-bottom:6px; }
+.game-end .g-score{ font-size:13px; color:var(--text-dim); margin-bottom:20px; }
+/* Primary gradient button, reused for "Start Game" and "Play Again" */
+.g-again{
+  all:unset; box-sizing:border-box; display:block; width:100%; text-align:center;
+  padding:11px 14px; border-radius:9px; cursor:pointer;
+  background: var(--grad); color:#fff; font-weight:700; font-size:13.5px;
+}
+.g-again:hover{ filter:brightness(1.08); }
